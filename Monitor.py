@@ -30,7 +30,7 @@ class Monitor(threading.Thread):
 
     def __init__(self, proxy_list,
                  discovery_workers=1, recheck_workers=1,
-                 recheck_interval=180, reuse_interval=180,
+                 recheck_interval=300, reuse_interval=300,
                  acquire_threshold=10):
         """Initialize the Monitor thread.
 
@@ -94,9 +94,9 @@ class Monitor(threading.Thread):
             self.lock.acquire()
 
             if len(self.used) > 0:
-                last_check = self.used[0].last_used
+                last_used = self.used[0].last_used
                 now = datetime.now()
-                diff = (now - last_check).total_seconds()
+                diff = (now - last_used).total_seconds()
                 if diff > self.reuse_interval:
                     proxy = self.used.pop()
                     self.recheck.put(proxy)
@@ -185,6 +185,7 @@ class Monitor(threading.Thread):
         returned.
         """
         proxy = self.ready.pop()
+        proxy.last_used = datetime.now()
         self.used.append(proxy)
 
         return proxy
@@ -224,11 +225,10 @@ class Monitor(threading.Thread):
         used_worker.daemon = True
         used_worker.start()
 
+        dbus_path = '/xxx/daemon/proxy/%s' % self.proxy_list.Protocol.name
         bus = dbus.SessionBus()
         bus_name = dbus.service.BusName('proxy.daemon.xxx', bus=bus)
-        self.dbusProxy = DbusProxy(bus_name,
-                                   '/xxx/daemon/proxy/DbusProxy',
-                                   self.get_ready)
+        self.dbusProxy = DbusProxy(bus_name, dbus_path, self.get_ready)
 
         gobject.threads_init()
         self.dbus_loop = gobject.MainLoop()
