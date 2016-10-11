@@ -1,28 +1,15 @@
 from datetime import datetime
+import ProxyList
 import unittest
+import Monitor
 import Proxy
 
 
-class TestProxy(unittest.TestCase):
+class TestProxyList(unittest.TestCase):
     def setUp(self):
         self.ip = '127.0.0.1'
         self.port = 2342
         self.proxy = Proxy.HttpProxy(self.ip, self.port)
-
-    def initialize_http_proxy_test(self):
-        assert self.proxy.ip is self.ip
-        assert self.proxy.port is self.port
-        assert self.proxy.added
-        assert not self.proxy.last_used
-
-    def to_string_test(self):
-        print str(self.proxy)
-        assert str(self.proxy) == '%s:%i' % (self.ip, self.port)
-
-    def validate_http_proxy_test(self):
-        self.proxy.validates()
-        assert self.proxy.checked
-        assert self.proxy.last_check
 
     def proxy_list_plain_test(self):
         http_proxies = {}
@@ -34,7 +21,7 @@ class TestProxy(unittest.TestCase):
         assert self.proxy in http_proxies.values()
 
     def proxy_list_test(self):
-        http_proxies = Proxy.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
+        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
         assert not http_proxies.updated
 
         http_proxies.aquire()
@@ -63,10 +50,9 @@ class TestProxy(unittest.TestCase):
         assert len(http_proxies) is 0
 
     def proxy_monitor_test(self):
-        http_proxies = Proxy.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
-        http_monitor = Proxy.Monitor(http_proxies)
-
+        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
+        http_monitor = Monitor.Monitor(http_proxies)
         assert http_monitor.discovered
         assert http_monitor.recheck
-        assert http_monitor.ready
-        assert http_monitor.used
+        assert len(http_monitor.ready) is 0
+        assert len(http_monitor.used) is 0
