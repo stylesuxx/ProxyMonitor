@@ -16,7 +16,11 @@ class Proxy:
 
     @abstractproperty
     def name(self):
-        """Proxy type."""
+        """Proxy type.
+
+        This is the name used in the DBUS interface. Every proxy should have
+        its unique name.
+        """
         return NotImplemented
 
     def __init__(self, ip, port):
@@ -27,10 +31,6 @@ class Proxy:
 
         :param port: The port of the proxy
         :type port: int
-
-        :returns: True if file size is bigger than minValid and smaller than
-                  or equal to maxValid
-        :rtype: boolean
         """
         self.ip = ip
         self.port = port
@@ -42,12 +42,12 @@ class Proxy:
         self.added = datetime.now()
 
     def __str__(self):
-        """Get string representation.
+        """Get a proxies string representation.
 
         :returns: Return the string representation of the proxy
         :rtype: string
         """
-        return '%s:%i' % (self.ip, self.port)
+        return('%s:%i' % (self.ip, self.port))
 
     def validates(self):
         """Validate the proxy.
@@ -66,6 +66,9 @@ class Proxy:
     def _is_valid(self):
         """Subclass needs to implement this method.
 
+        This method is used to validate a proxy, anything can happen here.
+        Return True if the proxy validates, False otherwise.
+
         :returns: Return true if the proxy is valid
         :rtype: boolean
         """
@@ -80,10 +83,10 @@ class HttpProxy(Proxy):
     def __init__(self, ip, port):
         """Initialize a HTTP proxy.
 
-        :param ip: The IP Address of the http proxy
+        :param ip: IP Address of the http proxy
         :type ip: string
 
-        :param port: The port of the http proxy
+        :param port: Port of the http proxy
         :type port: int
         """
         super(HttpProxy, self).__init__(ip, port)
@@ -118,10 +121,10 @@ class HttpsProxy(Proxy):
     def __init__(self, ip, port):
         """Initialize a HTTP proxy.
 
-        :param ip: The IP Address of the http proxy
+        :param ip: IP Address of the https proxy
         :type ip: string
 
-        :param port: The port of the http proxy
+        :param port: Port of the https proxy
         :type port: int
         """
         super(HttpsProxy, self).__init__(ip, port)
