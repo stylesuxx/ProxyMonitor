@@ -1,15 +1,13 @@
+from ProxyDaemon import ProxyList, Monitor, HttpProxy, HttpsProxy
 from datetime import datetime
-import ProxyList
 import unittest
-import Monitor
-import Proxy
 
 
 class TestHttpProxy(unittest.TestCase):
     def setUp(self):
         self.ip = '127.0.0.1'
         self.port = 2342
-        self.proxy = Proxy.HttpProxy(self.ip, self.port)
+        self.proxy = HttpProxy(self.ip, self.port)
 
     def initialize_http_proxy_test(self):
         assert self.proxy.ip is self.ip
@@ -22,7 +20,8 @@ class TestHttpProxy(unittest.TestCase):
         assert str(self.proxy) == '%s:%i' % (self.ip, self.port)
 
     def validate_http_proxy_test(self):
-        self.proxy.validates()
+        validates = self.proxy.validates()
+        assert not validates
         assert self.proxy.checked
         assert self.proxy.last_check
 
@@ -35,7 +34,7 @@ class TestHttpsProxy(unittest.TestCase):
     def setUp(self):
         self.ip = '127.0.0.1'
         self.port = 2342
-        self.proxy = Proxy.HttpsProxy(self.ip, self.port)
+        self.proxy = HttpsProxy(self.ip, self.port)
 
     def initialize_http_proxy_test(self):
         assert self.proxy.ip is self.ip

@@ -21,7 +21,7 @@ class Proxy:
         This is the name used in the DBUS interface. Every proxy should have
         its unique name.
         """
-        return NotImplemented
+        raise NotImplementedError
 
     def __init__(self, ip, port):
         """Initialize the proxy.
@@ -72,7 +72,7 @@ class Proxy:
         :returns: Return true if the proxy is valid
         :rtype: boolean
         """
-        return NotImplemented
+        raise NotImplementedError
 
 
 class HttpProxy(Proxy):

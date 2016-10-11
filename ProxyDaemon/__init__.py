@@ -1,3 +1,3 @@
 from Proxy import Proxy, HttpProxy, HttpsProxy
-import ProxyList
-import Monitor
+from ProxyList import ProxyList
+from Monitor import Monitor
