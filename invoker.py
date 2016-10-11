@@ -2,7 +2,9 @@
 """Invoke remote methods."""
 import dbus
 
-obj = dbus.SessionBus().get_object('proxy.daemon.xxx',
-                                   '/xxx/daemon/proxy/DbusProxy')
+session = dbus.SessionBus()
 
-print obj.getProxy(dbus_interface='xxx.daemon.proxy.ProxyInterface')
+http_provider = session.get_object('proxy.daemon.xxx',
+                                   '/xxx/daemon/proxy/Http')
+
+print http_provider.getProxy(dbus_interface='xxx.daemon.proxy.ProxyInterface')

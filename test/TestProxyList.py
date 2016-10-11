@@ -21,7 +21,7 @@ class TestProxyList(unittest.TestCase):
         assert self.proxy in http_proxies.values()
 
     def proxy_list_test(self):
-        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
+        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test/test_proxies.txt')
         assert not http_proxies.updated
 
         http_proxies.aquire()
@@ -50,7 +50,7 @@ class TestProxyList(unittest.TestCase):
         assert len(http_proxies) is 0
 
     def proxy_monitor_test(self):
-        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test_proxies.txt')
+        http_proxies = ProxyList.ProxyList(Proxy.HttpProxy, 'cat test/test_proxies.txt')
         http_monitor = Monitor.Monitor(http_proxies)
         assert http_monitor.discovered
         assert http_monitor.recheck
