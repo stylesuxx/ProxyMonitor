@@ -74,9 +74,16 @@ class Monitor(threading.Thread):
 
         self.discovery_workers = discovery_workers
         self.recheck_workers = recheck_workers
+
+        self.discovery_shared = {'active': 0}
+        self.recheck_shared = {'active': 0}
+
         self.recheck_interval = recheck_interval
         self.reuse_interval = reuse_interval
         self.acquire_threshold = acquire_threshold
+
+        self.is_acquiring = False
+        self.is_cleaning = False
 
         self.done = False
         self.workers = []
@@ -98,8 +105,13 @@ class Monitor(threading.Thread):
                 now = datetime.now()
                 diff = (now - last_used).total_seconds()
                 if diff > self.reuse_interval:
+                    self.is_cleaning = True
                     proxy = self.used.pop()
                     self.recheck.put(proxy)
+                else:
+                    self.is_cleaning = False
+            else:
+                self.is_cleaning = False
 
             self.lock.release()
 
@@ -121,14 +133,19 @@ class Monitor(threading.Thread):
                 now = datetime.now()
                 diff = (now - last_check).total_seconds()
                 if diff > self.recheck_interval:
+                    self.is_cleaning = True
                     proxy = self.ready.pop()
                     self.recheck.put(proxy)
+                else:
+                    self.is_cleaning = False
+            else:
+                self.is_cleaning = False
 
             self.lock.release()
 
             time.sleep(1)
 
-    def validation_worker(self, queue):
+    def validation_worker(self, queue, shared):
         """Worker that validates a proxy.
 
         Gets a proxy from the assigned queue and validates it. If it is invalid
@@ -139,6 +156,7 @@ class Monitor(threading.Thread):
         """
         while not self.done:
             proxy = queue.get()
+            shared['active'] += 1
             if proxy.validates():
                 self.ready.append(proxy)
             else:
@@ -148,6 +166,7 @@ class Monitor(threading.Thread):
 
                 self.lock.release()
 
+            shared['active'] -= 1
             queue.task_done()
 
     def acquire_worker(self):
@@ -168,15 +187,41 @@ class Monitor(threading.Thread):
         Triggers the proxy lists acquire function and fills the discovered
         queue.
         """
+        self.is_acquiring = True
+
         proxies = self.proxy_list.aquire()
         for proxy in proxies.values():
             self.discovered.put(proxy)
 
+        self.is_acquiring = False
+
     def get_stats(self):
-        """Return monitoring statistics."""
-        return('%05i | %05i | %05i | %05i | %05i' %
-               (len(self.proxy_list), self.discovered.qsize(),
-                len(self.ready), self.recheck.qsize(), len(self.used)))
+        """Return monitoring statistics.
+
+        :returns: Return a dictionary with different metrics
+        :rtype: dict
+        """
+        return {
+            'total': len(self.proxy_list),
+            'discovered': self.discovered.qsize(),
+            'ready': len(self.ready),
+            'recheck': self.recheck.qsize(),
+            'used': len(self.used),
+            'workers': {
+                'discovery': {
+                    'count': self.discovery_workers,
+                    'active': self.discovery_shared['active']
+                },
+                'recheck': {
+                    'count': self.recheck_workers,
+                    'active': self.recheck_shared['active']
+                }
+            },
+            'state': {
+                'acquiring': self.is_acquiring,
+                'cleaning': self.is_cleaning
+            }
+        }
 
     def get_ready(self):
         """Return a proxy from the ready queue.
@@ -207,13 +252,15 @@ class Monitor(threading.Thread):
 
         for i in range(0, self.discovery_workers):
             worker = threading.Thread(target=self.validation_worker,
-                                      args=(self.discovered,))
+                                      args=(self.discovered,
+                                            self.discovery_shared))
             worker.daemon = True
             worker.start()
 
         for i in range(0, self.recheck_workers):
             worker = threading.Thread(target=self.validation_worker,
-                                      args=(self.recheck,))
+                                      args=(self.recheck,
+                                            self.recheck_shared))
             worker.daemon = True
             worker.start()
 
