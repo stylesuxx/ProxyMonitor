@@ -19,7 +19,8 @@ class Proxy:
         """Proxy type.
 
         This is the name used in the DBUS interface. Every proxy should have
-        its unique name.
+        its unique name. No special chars (including space) are allowed in the
+        name.
         """
         raise NotImplementedError
 
@@ -112,6 +113,102 @@ class HttpProxy(Proxy):
 
         return False
 
+
+class AnonymousHttpProxy(Proxy):
+    """Anonymous HTTP proxy."""
+
+    name = "AnonymousHttp"
+    internal_ip = None
+
+    def __init__(self, ip, port):
+        """Initialize an anonymous HTTP proxy.
+
+        :param ip: IP Address of the http proxy
+        :type ip: string
+
+        :param port: Port of the http proxy
+        :type port: int
+        """
+        super(AnonymousHttpProxy, self).__init__(ip, port)
+
+        """Obtain own IP address once."""
+        if not AnonymousHttpProxy.internal_ip:
+            r = requests.get('http://api.ipify.org/?format=json')
+            result = r.json()
+            self.internal_ip = result['ip']
+
+    def _is_valid(self):
+        """Validate the anonymous proxy.
+
+        To qualify as valid id needs to successfully connect to an IP service
+        within 30 seconds and the returned ip address must not be the Classes
+        IP address.
+
+        :returns: Return true if the proxy is valid
+        :rtype: boolean
+        """
+        proxies = {'http': 'http://%s:%i' % (self.ip, self.port)}
+        try:
+            r = requests.get('http://api.ipify.org/?format=json',
+                             proxies=proxies, timeout=30)
+            result = r.json()
+            assert self.internal_ip
+            assert result['ip']
+            return (self.internal_ip != result['ip'])
+        except:
+            pass
+
+        return False
+
+class AnonymousHttpsProxy(Proxy):
+    """Anonymous HTTP proxy."""
+
+    name = "AnonymousHttps"
+    internal_ip = None
+
+    def __init__(self, ip, port):
+        """Initialize an anonymous HTTP proxy.
+
+        :param ip: IP Address of the http proxy
+        :type ip: string
+
+        :param port: Port of the http proxy
+        :type port: int
+        """
+        super(AnonymousHttpsProxy, self).__init__(ip, port)
+
+        """Obtain own IP address once."""
+        if not AnonymousHttpProxy.internal_ip:
+            r = requests.get('http://api.ipify.org/?format=json')
+            result = r.json()
+            self.internal_ip = result['ip']
+
+    def _is_valid(self):
+        """Validate the anonymous proxy.
+
+        To qualify as valid id needs to successfully connect to an IP service
+        within 30 seconds and the returned ip address must not be the Classes
+        IP address.
+
+        :returns: Return true if the proxy is valid
+        :rtype: boolean
+        """
+        proxies = {
+            'http': 'http://%s:%i' % (self.ip, self.port),
+            'https': 'https://%s:%i' % (self.ip, self.port)
+        }
+
+        try:
+            r = requests.get('https://api.ipify.org/?format=json',
+                             proxies=proxies, timeout=30)
+            result = r.json()
+            assert self.internal_ip
+            assert result['ip']
+            return (self.internal_ip != result['ip'])
+        except:
+            pass
+
+        return False
 
 class HttpsProxy(Proxy):
     """HTTPS proxy base class."""
