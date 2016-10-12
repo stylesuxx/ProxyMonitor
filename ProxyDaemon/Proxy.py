@@ -291,4 +291,5 @@ class Socks4Proxy(Proxy):
 
 
 class Socks5Proxy(Proxy):
+    """ TODO """
     pass
