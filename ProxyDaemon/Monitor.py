@@ -1,28 +1,11 @@
 """Monitor for proxy list."""
 from dbus.mainloop.glib import DBusGMainLoop
+from DbusHandler import DbusHandler, DbusHandlerFactory
 from datetime import datetime
 from Queue import Queue
-import dbus.service
 import threading
-import dbus.glib
 import gobject
-import dbus
 import time
-
-
-class DbusProxy(dbus.service.Object):
-    """DBUS service object."""
-
-    def __init__(self, bus_name, object_path, get_proxy):
-        """Initialize the DBUS service object."""
-        dbus.service.Object.__init__(self, bus_name, object_path)
-        self.get_proxy = get_proxy
-
-    @dbus.service.method('xxx.daemon.proxy.ProxyInterface')
-    def getProxy(self):
-        """Return a proxy tuple with ip and port."""
-        proxy = self.get_proxy()
-        return (proxy.ip, proxy.port)
 
 
 class Monitor(threading.Thread):
@@ -222,7 +205,7 @@ class Monitor(threading.Thread):
             }
         }
 
-    def get_ready(self):
+    def pop(self):
         """Return a proxy from the ready queue.
 
         The proxy is taken from the ready queue, moved to the used queue and
@@ -233,6 +216,12 @@ class Monitor(threading.Thread):
         self.used.append(proxy)
 
         return proxy
+
+    def get(self, n):
+        pass
+
+    def getAll(self):
+        pass
 
     def run(self):
         """Run the monitor thread.
@@ -272,9 +261,12 @@ class Monitor(threading.Thread):
         used_worker.start()
 
         dbus_path = '/xxx/daemon/proxy/%s' % self.proxy_list.Protocol.name
-        bus = dbus.SessionBus()
-        bus_name = dbus.service.BusName('proxy.daemon.xxx', bus=bus)
-        self.dbusProxy = DbusProxy(bus_name, dbus_path, self.get_ready)
+        dbus_domain = 'proxy.daemon.xxx'
+        self.dbus_proxy = DbusHandlerFactory(dbus_domain,
+                                             dbus_path,
+                                             {
+                                                'pop': self.pop
+                                             })
 
         gobject.threads_init()
         self.dbus_loop = gobject.MainLoop()
