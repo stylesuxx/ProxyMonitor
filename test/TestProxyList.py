@@ -9,23 +9,16 @@ class TestProxyList(unittest.TestCase):
         self.port = 2342
         self.proxy = HttpProxy(self.ip, self.port)
 
-    def proxy_list_plain_test(self):
-        http_proxies = {}
-
-        http_proxies[str(self.proxy)] = self.proxy
-        http_proxies[str(self.proxy)] = self.proxy
-
-        assert len(http_proxies) is 1
-        assert self.proxy in http_proxies.values()
-
     def proxy_list_test(self):
         http_proxies = ProxyList(HttpProxy, 'cat test/test_proxies.txt')
         assert not http_proxies.updated
 
-        http_proxies.aquire()
+        for item in http_proxies.aquire():
+            pass
 
-        print http_proxies
-        assert http_proxies['127.0.0.1:9090']
+        proxy = http_proxies.get('127.0.0.1:9090')
+        print proxy
+        assert proxy
         assert len(http_proxies) is 2
         assert http_proxies.updated < datetime.now()
         assert '127.0.0.1:9090' in http_proxies

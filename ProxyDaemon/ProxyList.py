@@ -1,10 +1,15 @@
 """Proxy list base class."""
 from datetime import datetime
 import subprocess
+import threading
 
 
 class ProxyList():
-    """Base Class for proxy List."""
+    """Base Class for proxy List.
+
+    This is an emulation of a list. It provides the same methods a list would,
+    plus some additional that are specific to a proxy list.
+    """
 
     def __init__(self, Protocol, command):
         """Initialize an empty proxy list.
@@ -12,13 +17,22 @@ class ProxyList():
         :param protocol: The proxy protocol for this list
         :type protocol: Proxy
 
-        :param command: The commandline string used to aquire new proxies
+        :param command: The commandline string used to aquire new proxies.
+                        This may also be a blocking resource since input is
+                        processed line by line.
+                        The only requirement is, one proxy per line with its
+                        port, delimited by :
+
+                        E.g.:
+                        127.0.0.1:1234
         :type command: string
         """
         self.command = command
         self.Protocol = Protocol
+
         self.proxies = {}
         self.updated = None
+        self.lock = threading.Lock()
 
     def __len__(self):
         """Return length of the list.
@@ -78,7 +92,10 @@ class ProxyList():
         return iter(self.proxies.values())
 
     def clear(self):
-        """Clear the proxy list."""
+        """Clear the proxy list.
+
+        Removes all items from the list.
+        """
         self.proxies.clear()
 
     def keys(self):
@@ -123,13 +140,11 @@ class ProxyList():
             proxy = self.Protocol(ip, port)
             key = str(proxy)
 
-            """LOCK START"""
-
+            self.lock.acquire()
             if key not in self.proxies.keys():
                 self.proxies[key] = proxy
-                """LOCK END"""
                 yield proxy
 
-
+            self.lock.release()
 
         self.updated = datetime.now()
