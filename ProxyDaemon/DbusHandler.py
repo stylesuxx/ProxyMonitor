@@ -1,4 +1,7 @@
-"""Dbus related functionality."""
+"""Dbus related functionality.
+
+Exposes a DBUS interface to any application can access the data.
+"""
 import dbus.service
 import dbus.glib
 import dbus
@@ -45,7 +48,7 @@ class DbusHandler(dbus.service.Object):
 
 
 def DbusHandlerFactory(domain, path, methods):
-    """Returns a fully set up Dbus Handler.
+    """Return a fully set up Dbus Handler.
 
     See DbusHandler class for detailed parameter description
     """
