@@ -160,6 +160,45 @@ class AnonymousHttpProxy(Proxy):
 
         return False
 
+
+class HttpsProxy(Proxy):
+    """HTTPS proxy base class."""
+
+    name = "Https"
+
+    def __init__(self, ip, port):
+        """Initialize a HTTP proxy.
+
+        :param ip: IP Address of the https proxy
+        :type ip: string
+
+        :param port: Port of the https proxy
+        :type port: int
+        """
+        super(HttpsProxy, self).__init__(ip, port)
+
+    def _is_valid(self):
+        """Validate that the HTTP proxy is valid.
+
+        To qualify as valid id needs to successfully connect to an IP service
+        within 30 seconds.
+
+        :returns: Return true if the proxy is valid
+        :rtype: boolean
+        """
+        proxies = {'https': 'https://%s:%i' % (self.ip, self.port)}
+        try:
+            r = requests.get('https://api.ipify.org/?format=json',
+                             proxies=proxies, timeout=30)
+            result = r.json()
+            assert result['ip']
+            return True
+        except:
+            pass
+
+        return False
+
+
 class AnonymousHttpsProxy(Proxy):
     """Anonymous HTTP proxy."""
 
@@ -210,24 +249,25 @@ class AnonymousHttpsProxy(Proxy):
 
         return False
 
-class HttpsProxy(Proxy):
-    """HTTPS proxy base class."""
 
-    name = "Https"
+class Socks4Proxy(Proxy):
+    """Socks4 proxy base class."""
+
+    name = "Socks4"
 
     def __init__(self, ip, port):
         """Initialize a HTTP proxy.
 
-        :param ip: IP Address of the https proxy
+        :param ip: IP Address of the http proxy
         :type ip: string
 
-        :param port: Port of the https proxy
+        :param port: Port of the http proxy
         :type port: int
         """
-        super(HttpsProxy, self).__init__(ip, port)
+        super(Socks4Proxy, self).__init__(ip, port)
 
     def _is_valid(self):
-        """Validate that the HTTP proxy is valid.
+        """Validate that the Socks4 proxy is valid.
 
         To qualify as valid id needs to successfully connect to an IP service
         within 30 seconds.
@@ -235,9 +275,11 @@ class HttpsProxy(Proxy):
         :returns: Return true if the proxy is valid
         :rtype: boolean
         """
-        proxies = {'https': 'https://%s:%i' % (self.ip, self.port)}
+        proxies = {
+            'http': 'socks5://%s:%i' % (self.ip, self.port),
+            'https': 'socks5://%s:%i' % (self.ip, self.port)}
         try:
-            r = requests.get('https://api.ipify.org/?format=json',
+            r = requests.get('http://api.ipify.org/?format=json',
                              proxies=proxies, timeout=30)
             result = r.json()
             assert result['ip']
@@ -246,10 +288,6 @@ class HttpsProxy(Proxy):
             pass
 
         return False
-
-
-class Socks4Proxy(Proxy):
-    pass
 
 
 class Socks5Proxy(Proxy):
