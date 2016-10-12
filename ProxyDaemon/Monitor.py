@@ -189,8 +189,7 @@ class Monitor(threading.Thread):
         """
         self.is_acquiring = True
 
-        proxies = self.proxy_list.aquire()
-        for proxy in proxies.values():
+        for proxy in self.proxy_list.aquire():
             self.discovered.put(proxy)
 
         self.is_acquiring = False

@@ -106,12 +106,15 @@ class ProxyList():
         return self.proxies.items()
 
     def aquire(self):
-        """Run the aquire command and append new proxies."""
+        """Run the aquire command and append new proxies.
+
+        Returns an item as soon as it is found, technically this can be
+        connected to a streaming source without the need to ever disconnect.
+        """
         p = subprocess.Popen(self.command, shell=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
         lines = p.stdout.readlines()
         retval = p.wait()
-        proxies = {}
 
         for line in lines:
             ip = line.strip().split(':')[0]
@@ -119,10 +122,14 @@ class ProxyList():
 
             proxy = self.Protocol(ip, port)
             key = str(proxy)
+
+            """LOCK START"""
+
             if key not in self.proxies.keys():
                 self.proxies[key] = proxy
-                proxies[key] = proxy
+                """LOCK END"""
+                yield proxy
+
+
 
         self.updated = datetime.now()
-
-        return proxies
