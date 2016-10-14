@@ -12,9 +12,7 @@ class Monitor(threading.Thread):
     """Monitor a proxy list."""
 
     def __init__(self, proxy_list,
-                 discovery_workers=1, recheck_workers=1,
-                 recheck_interval=300, reuse_interval=300,
-                 acquire_threshold=10):
+                 discovery_workers=1, recheck_workers=1):
         """Initialize the Monitor thread.
 
         New proxies are moved to the discovered queue where workers will pick
@@ -47,33 +45,32 @@ class Monitor(threading.Thread):
         """
         threading.Thread.__init__(self)
 
-        self.proxy_list = proxy_list
+        self.recheck_interval = 300
+        self.reuse_interval = 300
+        self.acquire_interval = 300
 
-        self.discovered = Queue()
-        self.recheck = Queue()
+        self._proxy_list = proxy_list
 
-        self.ready = []
-        self.used = []
+        self._discovered = Queue()
+        self._recheck = Queue()
 
-        self.discovery_workers = discovery_workers
-        self.recheck_workers = recheck_workers
+        self._ready = []
+        self._used = []
 
-        self.discovery_shared = {'active': 0}
-        self.recheck_shared = {'active': 0}
+        self._discovery_workers = discovery_workers
+        self._recheck_workers = recheck_workers
 
-        self.recheck_interval = recheck_interval
-        self.reuse_interval = reuse_interval
-        self.acquire_threshold = acquire_threshold
+        self._discovery_shared = {'active': 0}
+        self._recheck_shared = {'active': 0}
 
-        self.is_acquiring = False
-        self.is_cleaning = False
+        self._is_acquiring = False
+        self._is_cleaning = False
 
-        self.done = False
-        self.workers = []
+        self._done = False
 
         self._log = []
 
-        self.lock = threading.Lock()
+        # self._lock = threading.Lock()
 
     def log(self, message):
         """Log a message.
@@ -85,7 +82,7 @@ class Monitor(threading.Thread):
         self._log.append({
             'date': now,
             'message': message,
-            'source': self.proxy_list.Protocol.name
+            'source': self._proxy_list.Protocol.name
         })
 
     def used_cleaner(self):
@@ -94,18 +91,18 @@ class Monitor(threading.Thread):
         When a proxy is older than its time to life time on the list, it is
         moved to the recheck queue.
         """
-        if len(self.used) > 0:
-            last_used = self.used[0].last_used
+        if len(self._used) > 0:
+            last_used = self._used[0].last_used
             now = datetime.now()
             diff = (now - last_used).total_seconds()
             if diff > self.reuse_interval:
-                self.is_cleaning = True
-                proxy = self.used.pop()
-                self.recheck.put(proxy)
+                self._is_cleaning = True
+                proxy = self._used.pop()
+                self._recheck.put(proxy)
             else:
-                self.is_cleaning = False
+                self._is_cleaning = False
         else:
-            self.is_cleaning = False
+            self._is_cleaning = False
 
     def ready_cleaner(self):
         """Monitor the ready list.
@@ -113,22 +110,22 @@ class Monitor(threading.Thread):
         When a proxy is above its time to life time on the list, it is moved
         to the recheck queue.
         """
-        if len(self.ready) > 0:
-            last_check = self.ready[0].last_check
+        if len(self._ready) > 0:
+            last_check = self._ready[0].last_check
             now = datetime.now()
             diff = (now - last_check).total_seconds()
             if diff > self.recheck_interval:
-                self.is_cleaning = True
-                proxy = self.ready.pop()
-                self.recheck.put(proxy)
+                self._is_cleaning = True
+                proxy = self._ready.pop()
+                self._recheck.put(proxy)
             else:
-                self.is_cleaning = False
+                self._is_cleaning = False
         else:
-            self.is_cleaning = False
+            self._is_cleaning = False
 
     def cleaner_worker(self, method):
         """A woerker wrapper for the cleaner methods."""
-        while not self.done:
+        while not self._done:
             method()
 
             time.sleep(1)
@@ -142,13 +139,13 @@ class Monitor(threading.Thread):
         :param queue: The queue to process
         :type queue: Queue
         """
-        while not self.done:
+        while not self._done:
             proxy = queue.get()
             shared['active'] += 1
             if proxy.validates():
-                self.ready.append(proxy)
+                self._ready.append(proxy)
             else:
-                del self.proxy_list[str(proxy)]
+                del self._proxy_list[str(proxy)]
 
             shared['active'] -= 1
             queue.task_done()
@@ -156,14 +153,11 @@ class Monitor(threading.Thread):
     def acquire_worker(self):
         """Worker that acquires new proxies.
 
-        This worker acquires new proxies when the proxy list is below a
-        threshold.
+        This worker acquires new proxies in a specified interval.
         """
-        while not self.done:
-            if len(self.proxy_list) < self.acquire_threshold:
-                self.acquire()
-
-            time.sleep(10)
+        while not self._done:
+            self.acquire()
+            time.sleep(self.acquire_interval)
 
     def acquire(self):
         """Add newly discovered proxies to the queue.
@@ -171,14 +165,14 @@ class Monitor(threading.Thread):
         Triggers the proxy lists acquire function and fills the discovered
         queue.
         """
-        self.log("Started acquiring proxies")
-        self.is_acquiring = True
+        self.log("Acquire: Start")
+        self._is_acquiring = True
 
-        for proxy in self.proxy_list.aquire():
-            self.discovered.put(proxy)
+        for proxy in self._proxy_list.aquire():
+            self._discovered.put(proxy)
 
-        self.is_acquiring = False
-        self.log("Finished acquiring proxies")
+        self._is_acquiring = False
+        self.log("Acquire: Done")
 
     def get_log(self):
         """Return the log.
@@ -197,24 +191,24 @@ class Monitor(threading.Thread):
         :rtype: dict
         """
         return {
-            'total': len(self.proxy_list),
-            'discovered': self.discovered.qsize(),
-            'ready': len(self.ready),
-            'recheck': self.recheck.qsize(),
-            'used': len(self.used),
+            'total': len(self._proxy_list),
+            'discovered': self._discovered.qsize(),
+            'ready': len(self._ready),
+            'recheck': self._recheck.qsize(),
+            'used': len(self._used),
             'workers': {
                 'discovery': {
-                    'count': self.discovery_workers,
-                    'active': self.discovery_shared['active']
+                    'count': self._discovery_workers,
+                    'active': self._discovery_shared['active']
                 },
                 'recheck': {
-                    'count': self.recheck_workers,
-                    'active': self.recheck_shared['active']
+                    'count': self._recheck_workers,
+                    'active': self._recheck_shared['active']
                 }
             },
             'state': {
-                'acquiring': self.is_acquiring,
-                'cleaning': self.is_cleaning
+                'acquiring': self._is_acquiring,
+                'cleaning': self._is_cleaning
             }
         }
 
@@ -224,9 +218,10 @@ class Monitor(threading.Thread):
         The proxy is taken from the ready queue, moved to the used queue and
         returned.
         """
-        proxy = self.ready.pop()
+        self.log("DBUS: pop")
+        proxy = self._ready.pop()
         proxy.last_used = datetime.now()
-        self.used.append(proxy)
+        self._used.append(proxy)
 
         return proxy
 
@@ -251,33 +246,33 @@ class Monitor(threading.Thread):
         acquire_worker.daemon = True
         acquire_worker.start()
 
-        for i in range(0, self.discovery_workers):
+        for i in range(0, self._discovery_workers):
             worker = threading.Thread(target=self.validation_worker,
-                                      args=(self.discovered,
-                                            self.discovery_shared))
+                                      args=(self._discovered,
+                                            self._discovery_shared))
             worker.daemon = True
             worker.start()
 
-        for i in range(0, self.recheck_workers):
+        for i in range(0, self._recheck_workers):
             worker = threading.Thread(target=self.validation_worker,
-                                      args=(self.recheck,
-                                            self.recheck_shared))
+                                      args=(self._recheck,
+                                            self._recheck_shared))
             worker.daemon = True
             worker.start()
 
         target = self.cleaner_worker
         ready_worker = threading.Thread(target=target,
-                                        args=(self.ready_cleaner,))
+                                        args=(self._ready_cleaner,))
         ready_worker.daemon = True
         ready_worker.start()
 
         target = self.cleaner_worker
         used_worker = threading.Thread(target=target,
-                                       args=(self.used_cleaner,))
+                                       args=(self._used_cleaner,))
         used_worker.daemon = True
         used_worker.start()
 
-        dbus_path = '/xxx/daemon/proxy/%s' % self.proxy_list.Protocol.name
+        dbus_path = '/xxx/daemon/proxy/%s' % self._proxy_list.Protocol.name
         dbus_domain = 'proxy.daemon.xxx'
         self.dbus_proxy = DbusHandlerFactory(dbus_domain,
                                              dbus_path,

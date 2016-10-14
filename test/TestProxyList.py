@@ -43,7 +43,4 @@ class TestProxyList(unittest.TestCase):
     def proxy_monitor_test(self):
         http_proxies = ProxyList(HttpProxy, 'cat test/test_proxies.txt')
         http_monitor = Monitor(http_proxies)
-        assert http_monitor.discovered
-        assert http_monitor.recheck
-        assert len(http_monitor.ready) is 0
-        assert len(http_monitor.used) is 0
+        assert http_monitor
