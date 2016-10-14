@@ -123,9 +123,9 @@ class LogView():
         counter = 0
         for i in range(0, len(items)):
             item = items[i]
-            box.addstr(1 + i, 1, '[%s] %s > %s' %
-                       (item['source'],
-                        item['date'].strftime('%H:%M:%S'),
+            box.addstr(1 + i, 2, '%s [%s] %s' %
+                       (item['date'].strftime('%H:%M:%S'),
+                        item['source'],
                         item['message']))
 
         box.refresh()
