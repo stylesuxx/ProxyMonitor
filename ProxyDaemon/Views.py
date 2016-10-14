@@ -23,7 +23,7 @@ class MainView():
         self.proxy_views = []
         for monitor in monitors:
             view = ProxyView(top_offset + box_offset * counter, 1,
-                             monitor.proxy_list.Protocol.name,
+                             monitor.get_protocol(),
                              monitor.get_stats)
 
             logs.append(monitor.get_log)

@@ -72,6 +72,120 @@ class Monitor(threading.Thread):
 
         # self._lock = threading.Lock()
 
+    def run(self):
+        """Run the monitor thread.
+
+        It will aquire the proxy list items, and process them:
+        * Aquire a list of proxy servers
+        * Spawn workers to validate newly discovered
+        * Spawn workers to recheck previously validated
+        * Run a worker to check the ttl on the ready list
+        * Run a worker to check the ttl on the used list
+        * Run the DBUS daemon
+        """
+        acquire_worker = threading.Thread(target=self._acquire_worker)
+        acquire_worker.daemon = True
+        acquire_worker.start()
+
+        for i in range(0, self._discovery_workers):
+            worker = threading.Thread(target=self._validation_worker,
+                                      args=(self._discovered,
+                                            self._discovery_shared))
+            worker.daemon = True
+            worker.start()
+
+        for i in range(0, self._recheck_workers):
+            worker = threading.Thread(target=self._validation_worker,
+                                      args=(self._recheck,
+                                            self._recheck_shared))
+            worker.daemon = True
+            worker.start()
+
+        target = self._cleaner_worker
+        ready_worker = threading.Thread(target=target,
+                                        args=(self._ready_cleaner,))
+        ready_worker.daemon = True
+        ready_worker.start()
+
+        target = self._cleaner_worker
+        used_worker = threading.Thread(target=target,
+                                       args=(self._used_cleaner,))
+        used_worker.daemon = True
+        used_worker.start()
+
+        dbus_path = '/xxx/daemon/proxy/%s' % self._proxy_list.Protocol.name
+        dbus_domain = 'proxy.daemon.xxx'
+        self.dbus_proxy = DbusHandlerFactory(dbus_domain,
+                                             dbus_path,
+                                             {'pop': self.pop})
+
+        gobject.threads_init()
+        self.dbus_loop = gobject.MainLoop()
+        self.dbus_loop.run()
+
+    def get_protocol(self):
+        """Return the protocol name the monitor is watching."""
+        self._proxy_list.Protocol.name
+
+    def get_log(self):
+        """Return the log.
+
+        :returns: Return the log
+        :rtype: list
+        """
+        log = list(self._log_messages)
+        self._log_messages = []
+        return log
+
+    def get_stats(self):
+        """Return monitoring statistics.
+
+        :returns: Return a dictionary with different metrics
+        :rtype: dict
+        """
+        return {
+            'total': len(self._proxy_list),
+            'discovered': self._discovered.qsize(),
+            'ready': len(self._ready),
+            'recheck': self._recheck.qsize(),
+            'used': len(self._used),
+            'workers': {
+                'discovery': {
+                    'count': self._discovery_workers,
+                    'active': self._discovery_shared['active']
+                },
+                'recheck': {
+                    'count': self._recheck_workers,
+                    'active': self._recheck_shared['active']
+                }
+            },
+            'state': {
+                'acquiring': self._is_acquiring,
+                'cleaning': self._is_cleaning
+            }
+        }
+
+    def pop(self):
+        """Return a proxy from the ready queue.
+
+        The proxy is taken from the ready queue, moved to the used queue and
+        returned.
+        """
+        self._log("DBUS: pop")
+        proxy = self._ready.pop()
+        proxy.last_used = datetime.now()
+        self._used.append(proxy)
+
+        return proxy
+
+    def get(self, n):
+        """Get a specivied amount of proxies."""
+        pass
+
+    def getAll(self):
+        """Get all ready proxies."""
+        pass
+
     def _log(self, message):
         """Log a message.
 
@@ -173,115 +287,3 @@ class Monitor(threading.Thread):
 
         self._is_acquiring = False
         self._log("Acquire: Done")
-
-    def get_protocol(self):
-        """Return the protocol name the monitor is watching."""
-        self._proxy_list.Protocol.name
-
-    def get_log(self):
-        """Return the log.
-
-        :returns: Return the log
-        :rtype: list
-        """
-        log = list(self._log_messages)
-        self._log_messages = []
-        return log
-
-    def get_stats(self):
-        """Return monitoring statistics.
-
-        :returns: Return a dictionary with different metrics
-        :rtype: dict
-        """
-        return {
-            'total': len(self._proxy_list),
-            'discovered': self._discovered.qsize(),
-            'ready': len(self._ready),
-            'recheck': self._recheck.qsize(),
-            'used': len(self._used),
-            'workers': {
-                'discovery': {
-                    'count': self._discovery_workers,
-                    'active': self._discovery_shared['active']
-                },
-                'recheck': {
-                    'count': self._recheck_workers,
-                    'active': self._recheck_shared['active']
-                }
-            },
-            'state': {
-                'acquiring': self._is_acquiring,
-                'cleaning': self._is_cleaning
-            }
-        }
-
-    def pop(self):
-        """Return a proxy from the ready queue.
-
-        The proxy is taken from the ready queue, moved to the used queue and
-        returned.
-        """
-        self._log("DBUS: pop")
-        proxy = self._ready.pop()
-        proxy.last_used = datetime.now()
-        self._used.append(proxy)
-
-        return proxy
-
-    def get(self, n):
-        pass
-
-    def getAll(self):
-        pass
-
-    def run(self):
-        """Run the monitor thread.
-
-        It will aquire the proxy list items, and process them:
-        * Aquire a list of proxy servers
-        * Spawn workers to validate newly discovered
-        * Spawn workers to recheck previously validated
-        * Run a worker to check the ttl on the ready list
-        * Run a worker to check the ttl on the used list
-        * Run the DBUS daemon
-        """
-        acquire_worker = threading.Thread(target=self._acquire_worker)
-        acquire_worker.daemon = True
-        acquire_worker.start()
-
-        for i in range(0, self._discovery_workers):
-            worker = threading.Thread(target=self._validation_worker,
-                                      args=(self._discovered,
-                                            self._discovery_shared))
-            worker.daemon = True
-            worker.start()
-
-        for i in range(0, self._recheck_workers):
-            worker = threading.Thread(target=self._validation_worker,
-                                      args=(self._recheck,
-                                            self._recheck_shared))
-            worker.daemon = True
-            worker.start()
-
-        target = self._cleaner_worker
-        ready_worker = threading.Thread(target=target,
-                                        args=(self._ready_cleaner,))
-        ready_worker.daemon = True
-        ready_worker.start()
-
-        target = self._cleaner_worker
-        used_worker = threading.Thread(target=target,
-                                       args=(self._used_cleaner,))
-        used_worker.daemon = True
-        used_worker.start()
-
-        dbus_path = '/xxx/daemon/proxy/%s' % self._proxy_list.Protocol.name
-        dbus_domain = 'proxy.daemon.xxx'
-        self.dbus_proxy = DbusHandlerFactory(dbus_domain,
-                                             dbus_path,
-                                             {'pop': self.pop})
-
-        gobject.threads_init()
-        self.dbus_loop = gobject.MainLoop()
-        self.dbus_loop.run()
