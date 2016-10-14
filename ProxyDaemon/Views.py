@@ -12,15 +12,14 @@ class MainView():
         :param monitors: List of monitors to geneate views for.
         :type monitors: list
         """
-        self.monitors = monitors
-        self.stdscr = curses.initscr()
+        self._stdscr = curses.initscr()
 
         top_offset = 1
         box_offset = 7
         counter = 0
 
         logs = []
-        self.proxy_views = []
+        self._proxy_views = []
         for monitor in monitors:
             view = ProxyView(top_offset + box_offset * counter, 1,
                              monitor.get_protocol(),
@@ -28,10 +27,10 @@ class MainView():
 
             logs.append(monitor.get_log)
 
-            self.proxy_views.append(view)
+            self._proxy_views.append(view)
             counter += 1
 
-        self.log_view = LogView(1, 42, 'Log', logs)
+        self._log_view = LogView(1, 42, 'Log', logs)
 
         curses.curs_set(0)
         curses.start_color()
@@ -43,22 +42,22 @@ class MainView():
 
     def refresh(self):
         """Refresh all views."""
-        self.stdscr.bkgd(curses.color_pair(1))
-        self.stdscr.border()
-        self.stdscr.addstr(0, 2,
+        self._stdscr.bkgd(curses.color_pair(1))
+        self._stdscr.border()
+        self._stdscr.addstr(0, 2,
                            ' Proxy Daemon Monitor ',
                            curses.color_pair(2))
-        self.stdscr.refresh()
+        self._stdscr.refresh()
 
-        for view in self.proxy_views:
+        for view in self._proxy_views:
             view.refresh()
 
-        maxY, maxX = self.stdscr.getmaxyx()
-        self.log_view.refresh(maxY - 2, maxX - 43)
+        maxY, maxX = self._stdscr.getmaxyx()
+        self._log_view.refresh(maxY - 2, maxX - 43)
 
     def stop(self):
         """Reset the console back to its original state."""
-        self.stdscr.clear()
+        self._stdscr.clear()
         curses.endwin()
 
 
@@ -88,7 +87,7 @@ class LogView():
         self.header = header
         self.sources = sources
 
-        self.log = []
+        self._log = []
 
     def refresh(self, height, width):
         """
@@ -113,10 +112,10 @@ class LogView():
             log_new += source()
 
         log_new.sort(key=lambda item: item['date'])
-        self.log += log_new
+        self._log += log_new
 
         count = height - 2
-        items = self.log
+        items = self._log
         if(len(items) > count):
             items = items[count * -1]
 
