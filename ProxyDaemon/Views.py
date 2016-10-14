@@ -1,5 +1,26 @@
 import curses
 
+class LogView():
+    def __init__(self, y, x, header, sources):
+        self.y = y
+        self.x = x
+        self.header = header
+        self.sources = sources
+
+        self.log = {}
+
+    def refresh(self, height, width):
+        current = {}
+        for source in self.sources:
+            current.append(source())
+
+        box = curses.newwin(height, width, self.y, self.x)
+        box.bkgd(curses.color_pair(1))
+        box.box()
+        box.addstr(0, 2, ' %s ' % self.header)
+
+        box.refresh()
+
 
 class ProxyView():
     def __init__(self, y, x, header, source):

@@ -1,4 +1,4 @@
-from ProxyDaemon import (ProxyView)
+from ProxyDaemon import (ProxyView, LogView)
 from datetime import datetime
 import unittest
 import curses
@@ -67,3 +67,7 @@ class TestHttpProxy(unittest.TestCase):
 
         view = ProxyView(0, 0, 'Http', provider)
         view.refresh()
+
+    def test_log_view(self):
+        view = LogView(0, 0, 'Http', [])
+        view.refresh(20, 20)
