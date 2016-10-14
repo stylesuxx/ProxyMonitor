@@ -71,59 +71,66 @@ class Monitor(threading.Thread):
         self.done = False
         self.workers = []
 
+        self._log = []
+
         self.lock = threading.Lock()
 
-    def used_worker(self):
+    def log(self, message):
+        """Log a message.
+
+        :param message: The message to log
+        :type message: str
+        """
+        now = datetime.now()
+        self._log.append({
+            'date': now,
+            'message': message,
+            'source': self.proxy_list.Protocol.name
+        })
+
+    def used_cleaner(self):
         """Monitor the used list.
 
         When a proxy is older than its time to life time on the list, it is
         moved to the recheck queue.
         """
-        while not self.done:
-            # Acquire a lock while we manipulate the list
-            self.lock.acquire()
-
-            if len(self.used) > 0:
-                last_used = self.used[0].last_used
-                now = datetime.now()
-                diff = (now - last_used).total_seconds()
-                if diff > self.reuse_interval:
-                    self.is_cleaning = True
-                    proxy = self.used.pop()
-                    self.recheck.put(proxy)
-                else:
-                    self.is_cleaning = False
+        if len(self.used) > 0:
+            last_used = self.used[0].last_used
+            now = datetime.now()
+            diff = (now - last_used).total_seconds()
+            if diff > self.reuse_interval:
+                self.is_cleaning = True
+                proxy = self.used.pop()
+                self.recheck.put(proxy)
             else:
                 self.is_cleaning = False
+        else:
+            self.is_cleaning = False
 
-            self.lock.release()
-
-            time.sleep(1)
-
-    def ready_worker(self):
+    def ready_cleaner(self):
         """Monitor the ready list.
 
         When a proxy is above its time to life time on the list, it is moved
         to the recheck queue.
         """
-        while not self.done:
-            # Acquire a lock while we manipulate the list
-            self.lock.acquire()
-
-            if len(self.ready) > 0:
-
-                last_check = self.ready[0].last_check
-                now = datetime.now()
-                diff = (now - last_check).total_seconds()
-                if diff > self.recheck_interval:
-                    self.is_cleaning = True
-                    proxy = self.ready.pop()
-                    self.recheck.put(proxy)
-                else:
-                    self.is_cleaning = False
+        if len(self.ready) > 0:
+            last_check = self.ready[0].last_check
+            now = datetime.now()
+            diff = (now - last_check).total_seconds()
+            if diff > self.recheck_interval:
+                self.is_cleaning = True
+                proxy = self.ready.pop()
+                self.recheck.put(proxy)
             else:
                 self.is_cleaning = False
+        else:
+            self.is_cleaning = False
 
+    def cleaner_worker(self, method):
+        """A woerker wrapper for the cleaner methods."""
+        while not self.done:
+            self.lock.acquire()
+            method()
             self.lock.release()
 
             time.sleep(1)
@@ -143,11 +150,7 @@ class Monitor(threading.Thread):
             if proxy.validates():
                 self.ready.append(proxy)
             else:
-                self.lock.acquire()
-
                 del self.proxy_list[str(proxy)]
-
-                self.lock.release()
 
             shared['active'] -= 1
             queue.task_done()
@@ -170,12 +173,24 @@ class Monitor(threading.Thread):
         Triggers the proxy lists acquire function and fills the discovered
         queue.
         """
+        self.log("Started acquiring proxies")
         self.is_acquiring = True
 
         for proxy in self.proxy_list.aquire():
             self.discovered.put(proxy)
 
         self.is_acquiring = False
+        self.log("Finished acquiring proxies")
+
+    def get_log(self):
+        """Return the log.
+
+        :returns: Return the log
+        :rtype: list
+        """
+        log = list(self._log)
+        self._log = []
+        return log
 
     def get_stats(self):
         """Return monitoring statistics.
@@ -252,11 +267,13 @@ class Monitor(threading.Thread):
             worker.daemon = True
             worker.start()
 
-        ready_worker = threading.Thread(target=self.ready_worker)
+        target = self.cleaner_worker(self.ready_cleaner)
+        ready_worker = threading.Thread(target=target)
         ready_worker.daemon = True
         ready_worker.start()
 
-        used_worker = threading.Thread(target=self.used_worker)
+        target = self.cleaner_worker(self.used_cleaner)
+        used_worker = threading.Thread(target=target)
         used_worker.daemon = True
         used_worker.start()
 

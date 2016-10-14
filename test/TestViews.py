@@ -69,5 +69,15 @@ class TestHttpProxy(unittest.TestCase):
         view.refresh()
 
     def test_log_view(self):
-        view = LogView(0, 0, 'Http', [])
+        def provider():
+            return([
+                {
+                    'date': datetime.now(),
+                    'message': 'Some message to log',
+                    'source': 'Http'
+                }
+            ])
+
+        sources = [provider]
+        view = LogView(0, 0, 'Http', sources)
         view.refresh(20, 20)
