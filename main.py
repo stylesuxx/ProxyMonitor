@@ -1,20 +1,10 @@
-from ProxyDaemon import (HttpProxy, HttpsProxy, ProxyList, Monitor, ProxyView,
+from ProxyDaemon import (HttpProxy, HttpsProxy, ProxyList, Monitor,
                          AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy,
-                         LogView)
+                         MainView)
 import threading
-import curses
 import signal
 import time
 import sys
-
-
-stdscr = curses.initscr()
-curses.curs_set(0)
-curses.start_color()
-curses.use_default_colors()
-curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
-curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
-curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
 running = True
 
@@ -57,65 +47,29 @@ anon_http_monitor = Monitor(anon_http_proxies, 23, 5)
 anon_https_monitor = Monitor(anon_https_proxies, 23, 5)
 socks4_monitor = Monitor(socks4_proxies, 23, 5)
 
-"""
---https
---http
-"""
 monitors.append(http_monitor)
 #monitors.append(https_monitor)
 
-"""
---anon
---anon-http
---anon-https
-"""
 #monitors.append(anon_http_monitor)
 #monitors.append(anon_https_monitor)
 
-""""""
 #monitors.append(socks4_monitor)
 
-top_offset = 1
-box_offset = 7
-counter = 0
 
-logs = []
-views = []
 for monitor in monitors:
     monitor.daemon = True
     monitor.start()
 
-    view = ProxyView(top_offset + box_offset * counter, 1,
-                     monitor.proxy_list.Protocol.name,
-                     monitor.get_stats)
-
-    logs.append(monitor.get_log)
-
-    views.append(view)
-    counter += 1
-
-log_view = LogView(1, 42, 'Log', logs)
+view = MainView(monitors)
 
 def signal_handler(signal, frame):
     global running
     running = False
-    stdscr.clear()
-    curses.endwin()
+    view.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
 
-
 while running:
-    stdscr.bkgd(curses.color_pair(1))
-    stdscr.border()
-    stdscr.addstr(0, 2, ' Proxy Daemon Monitor ', curses.color_pair(2))
-    stdscr.refresh()
-
-    for view in views:
-        view.refresh()
-
-    maxY, maxX = stdscr.getmaxyx()
-    log_view.refresh(maxY - 2, maxX - 43)
-
+    view.refresh()
     time.sleep(1)

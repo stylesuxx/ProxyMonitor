@@ -2,6 +2,66 @@
 import curses
 
 
+class MainView():
+    """The main view for the proxy monitors."""
+
+    def __init__(self, monitors):
+        """
+        Inititialize the main view.
+
+        :param monitors: List of monitors to geneate views for.
+        :type monitors: list
+        """
+        self.monitors = monitors
+        self.stdscr = curses.initscr()
+
+        top_offset = 1
+        box_offset = 7
+        counter = 0
+
+        logs = []
+        self.proxy_views = []
+        for monitor in monitors:
+            view = ProxyView(top_offset + box_offset * counter, 1,
+                             monitor.proxy_list.Protocol.name,
+                             monitor.get_stats)
+
+            logs.append(monitor.get_log)
+
+            self.proxy_views.append(view)
+            counter += 1
+
+        self.log_view = LogView(1, 42, 'Log', logs)
+
+        curses.curs_set(0)
+        curses.start_color()
+        curses.use_default_colors()
+
+        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
+    def refresh(self):
+        """Refresh all views."""
+        self.stdscr.bkgd(curses.color_pair(1))
+        self.stdscr.border()
+        self.stdscr.addstr(0, 2,
+                           ' Proxy Daemon Monitor ',
+                           curses.color_pair(2))
+        self.stdscr.refresh()
+
+        for view in self.proxy_views:
+            view.refresh()
+
+        maxY, maxX = self.stdscr.getmaxyx()
+        self.log_view.refresh(maxY - 2, maxX - 43)
+
+    def stop(self):
+        """Reset the console back to its original state."""
+        self.stdscr.clear()
+        curses.endwin()
+
+
 class LogView():
     """Log View.
 
