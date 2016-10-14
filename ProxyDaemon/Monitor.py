@@ -129,9 +129,7 @@ class Monitor(threading.Thread):
     def cleaner_worker(self, method):
         """A woerker wrapper for the cleaner methods."""
         while not self.done:
-            self.lock.acquire()
             method()
-            self.lock.release()
 
             time.sleep(1)
 
@@ -267,13 +265,15 @@ class Monitor(threading.Thread):
             worker.daemon = True
             worker.start()
 
-        target = self.cleaner_worker(self.ready_cleaner)
-        ready_worker = threading.Thread(target=target)
+        target = self.cleaner_worker
+        ready_worker = threading.Thread(target=target,
+                                        args=(self.ready_cleaner,))
         ready_worker.daemon = True
         ready_worker.start()
 
-        target = self.cleaner_worker(self.used_cleaner)
-        used_worker = threading.Thread(target=target)
+        target = self.cleaner_worker
+        used_worker = threading.Thread(target=target,
+                                       args=(self.used_cleaner,))
         used_worker.daemon = True
         used_worker.start()
 
@@ -281,9 +281,7 @@ class Monitor(threading.Thread):
         dbus_domain = 'proxy.daemon.xxx'
         self.dbus_proxy = DbusHandlerFactory(dbus_domain,
                                              dbus_path,
-                                             {
-                                                'pop': self.pop
-                                             })
+                                             {'pop': self.pop})
 
         gobject.threads_init()
         self.dbus_loop = gobject.MainLoop()
