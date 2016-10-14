@@ -3,14 +3,7 @@ from datetime import datetime
 import unittest
 import curses
 
-class Bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-
 class MonitorMock:
-    protocol = Bunch(name='Http')
-    proxy_list = Bunch(Protocol=protocol)
-
     def __init__(self, stats_provider, log_provider):
         self.get_stats = stats_provider
         self.get_log = log_provider
@@ -20,6 +13,9 @@ class MonitorMock:
 
     def get_log(self):
         return self.get_stats()
+
+    def get_protocol(self):
+        return 'Http'
 
 class TestHttpProxy(unittest.TestCase):
     def setUp(self):

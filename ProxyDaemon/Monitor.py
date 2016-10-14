@@ -68,24 +68,24 @@ class Monitor(threading.Thread):
 
         self._done = False
 
-        self._log = []
+        self._log_messages = []
 
         # self._lock = threading.Lock()
 
-    def log(self, message):
+    def _log(self, message):
         """Log a message.
 
         :param message: The message to log
         :type message: str
         """
         now = datetime.now()
-        self._log.append({
+        self._log_messages.append({
             'date': now,
             'message': message,
             'source': self._proxy_list.Protocol.name
         })
 
-    def used_cleaner(self):
+    def _used_cleaner(self):
         """Monitor the used list.
 
         When a proxy is older than its time to life time on the list, it is
@@ -104,7 +104,7 @@ class Monitor(threading.Thread):
         else:
             self._is_cleaning = False
 
-    def ready_cleaner(self):
+    def _ready_cleaner(self):
         """Monitor the ready list.
 
         When a proxy is above its time to life time on the list, it is moved
@@ -123,14 +123,14 @@ class Monitor(threading.Thread):
         else:
             self._is_cleaning = False
 
-    def cleaner_worker(self, method):
+    def _cleaner_worker(self, method):
         """A woerker wrapper for the cleaner methods."""
         while not self._done:
             method()
 
             time.sleep(1)
 
-    def validation_worker(self, queue, shared):
+    def _validation_worker(self, queue, shared):
         """Worker that validates a proxy.
 
         Gets a proxy from the assigned queue and validates it. If it is invalid
@@ -150,29 +150,33 @@ class Monitor(threading.Thread):
             shared['active'] -= 1
             queue.task_done()
 
-    def acquire_worker(self):
+    def _acquire_worker(self):
         """Worker that acquires new proxies.
 
         This worker acquires new proxies in a specified interval.
         """
         while not self._done:
-            self.acquire()
+            self._acquire()
             time.sleep(self.acquire_interval)
 
-    def acquire(self):
+    def _acquire(self):
         """Add newly discovered proxies to the queue.
 
         Triggers the proxy lists acquire function and fills the discovered
         queue.
         """
-        self.log("Acquire: Start")
+        self._log("Acquire: Start")
         self._is_acquiring = True
 
         for proxy in self._proxy_list.aquire():
             self._discovered.put(proxy)
 
         self._is_acquiring = False
-        self.log("Acquire: Done")
+        self._log("Acquire: Done")
+
+    def get_protocol(self):
+        """Return the protocol name the monitor is watching."""
+        self._proxy_list.Protocol.name
 
     def get_log(self):
         """Return the log.
@@ -180,8 +184,8 @@ class Monitor(threading.Thread):
         :returns: Return the log
         :rtype: list
         """
-        log = list(self._log)
-        self._log = []
+        log = list(self._log_messages)
+        self._log_messages = []
         return log
 
     def get_stats(self):
@@ -218,7 +222,7 @@ class Monitor(threading.Thread):
         The proxy is taken from the ready queue, moved to the used queue and
         returned.
         """
-        self.log("DBUS: pop")
+        self._log("DBUS: pop")
         proxy = self._ready.pop()
         proxy.last_used = datetime.now()
         self._used.append(proxy)
@@ -242,31 +246,31 @@ class Monitor(threading.Thread):
         * Run a worker to check the ttl on the used list
         * Run the DBUS daemon
         """
-        acquire_worker = threading.Thread(target=self.acquire_worker)
+        acquire_worker = threading.Thread(target=self._acquire_worker)
         acquire_worker.daemon = True
         acquire_worker.start()
 
         for i in range(0, self._discovery_workers):
-            worker = threading.Thread(target=self.validation_worker,
+            worker = threading.Thread(target=self._validation_worker,
                                       args=(self._discovered,
                                             self._discovery_shared))
             worker.daemon = True
             worker.start()
 
         for i in range(0, self._recheck_workers):
-            worker = threading.Thread(target=self.validation_worker,
+            worker = threading.Thread(target=self._validation_worker,
                                       args=(self._recheck,
                                             self._recheck_shared))
             worker.daemon = True
             worker.start()
 
-        target = self.cleaner_worker
+        target = self._cleaner_worker
         ready_worker = threading.Thread(target=target,
                                         args=(self._ready_cleaner,))
         ready_worker.daemon = True
         ready_worker.start()
 
-        target = self.cleaner_worker
+        target = self._cleaner_worker
         used_worker = threading.Thread(target=target,
                                        args=(self._used_cleaner,))
         used_worker.daemon = True
