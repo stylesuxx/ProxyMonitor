@@ -45,8 +45,8 @@ class MainView():
         self._stdscr.bkgd(curses.color_pair(1))
         self._stdscr.border()
         self._stdscr.addstr(0, 2,
-                           ' Proxy Daemon Monitor ',
-                           curses.color_pair(2))
+                            ' Proxy Daemon Monitor ',
+                            curses.color_pair(2))
         self._stdscr.refresh()
 
         for view in self._proxy_views:
