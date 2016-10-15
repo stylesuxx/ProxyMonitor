@@ -3,8 +3,7 @@
 import dbus
 
 session = dbus.SessionBus()
+http = session.get_object('proxy.daemon.xxx', '/xxx/daemon/proxy/Http')
 
-http_provider = session.get_object('proxy.daemon.xxx',
-                                   '/xxx/daemon/proxy/Http')
-
-print http_provider.getProxy(dbus_interface='xxx.daemon.proxy.ProxyInterface')
+print http.pop(dbus_interface='xxx.daemon.proxy.ProxyInterface')
+print http.getAll(dbus_interface='xxx.daemon.proxy.ProxyInterface')

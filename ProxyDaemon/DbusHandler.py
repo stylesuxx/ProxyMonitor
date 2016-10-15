@@ -38,13 +38,16 @@ class DbusHandler(dbus.service.Object):
         proxy = self.methods['pop']()
         return (proxy.ip, proxy.port)
 
-    '''
     @dbus.service.method('xxx.daemon.proxy.ProxyInterface')
-    def get(self, n, ttl=0):
+    def getAll(self):
         """Return a proxy tuple with ip and port."""
-        proxy = self.get_proxy()
-        return (proxy.ip, proxy.port)
-    '''
+        proxies = self.methods['getAll']()
+        formatted = []
+        while proxies:
+            current = proxies.pop()
+            formatted.append((current.ip, current.port))
+
+        return formatted
 
 
 def DbusHandlerFactory(domain, path, methods):

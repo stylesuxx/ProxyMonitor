@@ -117,7 +117,8 @@ class Monitor(threading.Thread):
         dbus_domain = 'proxy.daemon.xxx'
         self.dbus_proxy = DbusHandlerFactory(dbus_domain,
                                              dbus_path,
-                                             {'pop': self.pop})
+                                             {'pop': self.pop,
+                                              'getAll': self.getAll})
 
         gobject.threads_init()
         self.dbus_loop = gobject.MainLoop()
@@ -171,7 +172,7 @@ class Monitor(threading.Thread):
         The proxy is taken from the ready queue, moved to the used queue and
         returned.
         """
-        self._log("DBUS: pop")
+        self._log('DBUS: pop')
         proxy = self._ready.pop()
         proxy.last_used = datetime.now()
         self._used.append(proxy)
@@ -184,7 +185,15 @@ class Monitor(threading.Thread):
 
     def getAll(self):
         """Get all ready proxies."""
-        pass
+        proxies = []
+        while self._ready:
+            proxy = self._ready.pop()
+            proxy.last_used = datetime.now()
+            self._used.append(proxy)
+            proxies.append(proxy)
+
+        self._log('DBUS: getAll - %i' % len(proxies))
+        return proxies
 
     def _log(self, message):
         """Log a message.
