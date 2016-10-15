@@ -26,7 +26,7 @@ class DbusHandler(dbus.service.Object):
         dbus.service.Object.__init__(self, bus_name, object_path)
         self.methods = methods
 
-    @dbus.service.method('xxx.daemon.proxy.ProxyInterface')
+    @dbus.service.method(dbus_interface='xxx.daemon.proxy.ProxyInterface')
     def pop(self):
         """Return a single proxy tuple with ip and port.
 
@@ -38,9 +38,12 @@ class DbusHandler(dbus.service.Object):
         proxy = self.methods['pop']()
         return (proxy.ip, proxy.port)
 
-    @dbus.service.method('xxx.daemon.proxy.ProxyInterface')
+    @dbus.service.method(dbus_interface='xxx.daemon.proxy.ProxyInterface')
     def getAll(self):
-        """Return a proxy tuple with ip and port."""
+        """Return a list of proxy tuples with ip and port.
+
+        When no proxy is on the ready list, it will return an empty list.
+        """
         proxies = self.methods['getAll']()
         formatted = []
         while proxies:
@@ -49,6 +52,21 @@ class DbusHandler(dbus.service.Object):
 
         return formatted
 
+    @dbus.service.method(dbus_interface='xxx.daemon.proxy.ProxyInterface',
+                         in_signature='i')
+    def get(self, n):
+        """Return a specified number of proxies.
+
+        The returned list may contain less items than requested if not enough
+        proxies are available on the ready list.
+        """
+        proxies = self.methods['get'](n)
+        formatted = []
+        while proxies:
+            current = proxies.pop()
+            formatted.append((current.ip, current.port))
+
+        return formatted
 
 def DbusHandlerFactory(domain, path, methods):
     """Return a fully set up Dbus Handler.

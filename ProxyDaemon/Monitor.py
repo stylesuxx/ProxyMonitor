@@ -118,6 +118,7 @@ class Monitor(threading.Thread):
         self.dbus_proxy = DbusHandlerFactory(dbus_domain,
                                              dbus_path,
                                              {'pop': self.pop,
+                                              'get': self.get,
                                               'getAll': self.getAll})
 
         gobject.threads_init()
@@ -181,7 +182,18 @@ class Monitor(threading.Thread):
 
     def get(self, n):
         """Get a specivied amount of proxies."""
-        pass
+        proxies = []
+        for i in range(0, n):
+            try:
+                proxy = self._ready.pop()
+                proxy.last_used = datetime.now()
+                self._used.append(proxy)
+                proxies.append(proxy)
+            except:
+                break
+
+        self._log('DBUS: get - requested %i, got %i' % (n, len(proxies)))
+        return proxies
 
     def getAll(self):
         """Get all ready proxies."""

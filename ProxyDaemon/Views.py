@@ -114,10 +114,11 @@ class LogView():
         log_new.sort(key=lambda item: item['date'])
         self._log += log_new
 
-        count = height - 2
+        count = (height - 2)
         items = self._log
         if(len(items) > count):
-            items = items[count * -1]
+            count = count * -1
+            items = items[count:]
 
         counter = 0
         for i in range(0, len(items)):
