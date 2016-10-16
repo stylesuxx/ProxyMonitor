@@ -3,12 +3,9 @@ python:
   - "2.7"
 before_install:
   - sudo apt-get install python-dbus python-gobject python-gtk2
-  - sudo mkdir -p /run/user/$USER/
-  - sudo touch /run/user/$USER/bus
-  - sudo chmod 777 /run/user/$USER/bus
 install: "pip install -r requirements.txt"
 script: nosetests
 virtualenv:
     system_site_packages: true
 env:
-  - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$USER/bus
+  - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
