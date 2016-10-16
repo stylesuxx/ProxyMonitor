@@ -15,10 +15,12 @@ class Bunch:
 class TestDbusHandler(unittest.TestCase):
     global proxy_list
 
-    def pop(self):
+    @classmethod
+    def pop(cls):
         return proxy_list.pop()
 
-    def get(self, n):
+    @classmethod
+    def get(cls, n):
         count = 0
         proxies = []
         while proxy_list and count < n:
@@ -27,36 +29,32 @@ class TestDbusHandler(unittest.TestCase):
 
         return proxies
 
-    def getAll(self):
+    @classmethod
+    def getAll(cls):
         return proxy_list
 
-    def start(self):
-        try:
-            dbus_path = '/xxx/daemon/proxy/%s' % 'Test'
-            dbus_domain = 'proxy.daemon.xxx'
-            self.dbus_proxy = DbusHandlerFactory(dbus_domain,
-                                                 dbus_path,
-                                                 {'pop': self.pop,
-                                                  'get': self.get,
-                                                  'getAll': self.getAll})
-            gobject.threads_init()
-            self.dbus_loop = gobject.MainLoop()
-            self.dbus_loop.run()
-        except:
-            '''Was already registered.'''
-            pass
+    @classmethod
+    def start(cls):
+        dbus_path = '/xxx/daemon/proxy/%s' % 'Test'
+        dbus_domain = 'proxy.daemon.xxx'
+        dbus_proxy = DbusHandlerFactory(dbus_domain,
+                                             dbus_path,
+                                             {'pop': cls.pop,
+                                              'get': cls.get,
+                                              'getAll': cls.getAll})
+        gobject.threads_init()
+        dbus_loop = gobject.MainLoop()
+        dbus_loop.run()
 
-    def setUp(self):
-        self.proxy_list = []
-        self.dbus_t = threading.Thread(target=self.start)
-        self.dbus_t.daemon = True
-        self.dbus_t.start()
+    @classmethod
+    def setup_class(cls):
+        cls.proxy_list = []
+        dbus_t = threading.Thread(target=cls.start)
+        dbus_t.daemon = True
+        dbus_t.start()
 
-        self.session = dbus.SessionBus()
-        self.dbus_test = self.session.get_object('proxy.daemon.xxx', '/xxx/daemon/proxy/Test')
-
-    def tearDown(self):
-        pass
+        session = dbus.SessionBus()
+        cls.dbus_test = session.get_object('proxy.daemon.xxx', '/xxx/daemon/proxy/Test')
 
     def test_dbus_pop_from_list(self):
         proxy_list.append(Bunch(ip="127.0.0.1", port=1234))
