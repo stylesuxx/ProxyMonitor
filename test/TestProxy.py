@@ -1,5 +1,5 @@
 from ProxyDaemon import (ProxyList, Monitor, HttpProxy, HttpsProxy,
-                         AnonymousHttpProxy, AnonymousHttpsProxy)
+                         AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy)
 from datetime import datetime
 import unittest
 
@@ -95,24 +95,24 @@ class TestAnonymousHttpProxy(unittest.TestCase):
         print self.proxy.name
         assert self.proxy.name is 'AnonymousHttps'
 
-class Socks4HttpProxy(unittest.TestCase):
+class TestSocks4Proxy(unittest.TestCase):
     def setUp(self):
         self.ip = '127.0.0.1'
         self.port = 2342
-        self.proxy = AnonymousHttpsProxy(self.ip, self.port)
+        self.proxy = Socks4Proxy(self.ip, self.port)
 
-    def initialize_anon_http_proxy_test(self):
+    def initialize_socks4_proxy_test(self):
         assert self.proxy.ip is self.ip
         assert self.proxy.port is self.port
         assert self.proxy.added
         assert not self.proxy.last_used
 
-    def validate_http_proxy_test(self):
+    def validate_socks4_proxy_test(self):
         validates = self.proxy.validates()
         assert not validates
         assert self.proxy.checked
         assert self.proxy.last_check
 
-    def proxy_name_test(self):
+    def socks4_proxy_name_test(self):
         print self.proxy.name
         assert self.proxy.name is 'Socks4'
