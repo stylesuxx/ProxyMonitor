@@ -5,3 +5,5 @@ before_install:
   - sudo apt-get install python-dbus python-gobject python-gtk2
 install: "pip install -r requirements.txt"
 script: nosetests
+virtualenv:
+  system-site-packages: true
