@@ -5,6 +5,7 @@ before_install:
   - sudo apt-get install python-dbus python-gobject python-gtk2
   - sudo mkdir -p /run/user/$USER/
   - sudo touch /run/user/$USER/bus
+  - sudo chmod 777 /run/user/$USER/bus
 install: "pip install -r requirements.txt"
 script: nosetests
 virtualenv:
