@@ -79,13 +79,15 @@ class TestHttpProxy(unittest.TestCase):
         }
 
     def log_provider(self):
-        return([
-            {
+        log = []
+        for i in range(0, 100):
+            log.append({
                 'date': datetime.now(),
                 'message': 'Some message to log',
                 'source': 'Http'
-            }
-        ])
+            })
+
+        return log
 
     def test_proxy_view_active(self):
         view = ProxyView(0, 0, 'Http', self.stats_provider)
