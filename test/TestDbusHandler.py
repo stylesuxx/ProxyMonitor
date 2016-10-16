@@ -1,5 +1,5 @@
-from nose.tools import *
 from ProxyDaemon import (DbusHandlerFactory)
+from nose.tools import *
 import threading
 import unittest
 import gobject
