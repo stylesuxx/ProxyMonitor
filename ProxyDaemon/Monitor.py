@@ -70,7 +70,7 @@ class Monitor(threading.Thread):
 
         self._log_messages = []
 
-        # self._lock = threading.Lock()
+        self._lock = threading.Lock()
 
     def run(self):
         """Run the monitor thread.
@@ -101,14 +101,12 @@ class Monitor(threading.Thread):
             worker.daemon = True
             worker.start()
 
-        target = self._cleaner_worker
-        ready_worker = threading.Thread(target=target,
+        ready_worker = threading.Thread(target=self._cleaner_worker,
                                         args=(self._ready_cleaner,))
         ready_worker.daemon = True
         ready_worker.start()
 
-        target = self._cleaner_worker
-        used_worker = threading.Thread(target=target,
+        used_worker = threading.Thread(target=self._cleaner_worker,
                                        args=(self._used_cleaner,))
         used_worker.daemon = True
         used_worker.start()
@@ -127,7 +125,7 @@ class Monitor(threading.Thread):
 
     def get_protocol(self):
         """Return the protocol name the monitor is watching."""
-        self._proxy_list.Protocol.name
+        return self._proxy_list.Protocol.name
 
     def get_log(self):
         """Return the log.
@@ -276,13 +274,20 @@ class Monitor(threading.Thread):
         """
         while not self._done:
             proxy = queue.get()
+
+            self._lock.acquire()
             shared['active'] += 1
+            self._lock.release()
+
             if proxy.validates():
                 self._ready.append(proxy)
             else:
                 del self._proxy_list[str(proxy)]
 
+            self._lock.acquire()
             shared['active'] -= 1
+            self._lock.release()
+
             queue.task_done()
 
     def _acquire_worker(self):
