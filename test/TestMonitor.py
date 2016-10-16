@@ -1,9 +1,10 @@
 from ProxyDaemon import (Monitor, ProxyList, HttpProxy)
+from nose.plugins.attrib import attr
 from datetime import datetime
 from nose.tools import *
 import unittest
 
-
+@attr(dbus=True)
 class TestHttpProxy(unittest.TestCase):
     monitor = None
 

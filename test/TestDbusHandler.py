@@ -1,4 +1,5 @@
 from ProxyDaemon import (DbusHandlerFactory)
+from nose.plugins.attrib import attr
 from nose.tools import *
 import threading
 import unittest
@@ -12,6 +13,7 @@ class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
+@attr(dbus=True)
 class TestDbusHandler(unittest.TestCase):
     global proxy_list
 
