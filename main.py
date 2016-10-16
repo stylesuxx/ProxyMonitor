@@ -1,6 +1,6 @@
-from ProxyDaemon import (HttpProxy, HttpsProxy, ProxyList, Monitor,
-                         AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy,
-                         MainView)
+from ProxyMonitor import (HttpProxy, HttpsProxy, ProxyList, Monitor,
+                          AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy,
+                          MainView)
 import threading
 import signal
 import time

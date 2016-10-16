@@ -1,5 +1,5 @@
-from ProxyDaemon import (ProxyList, Monitor, HttpProxy, HttpsProxy,
-                         AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy)
+from ProxyMonitor import (ProxyList, Monitor, HttpProxy, HttpsProxy,
+                          AnonymousHttpProxy, AnonymousHttpsProxy, Socks4Proxy)
 from datetime import datetime
 import unittest
 

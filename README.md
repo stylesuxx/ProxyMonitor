@@ -1,5 +1,7 @@
 # Proxy Monitor Daemon
+
 > Monitor, check and rotate your proxies.
+
 [![Build Status](https://travis-ci.org/stylesuxx/ProxyMonitor.svg?branch=develop)](https://travis-ci.org/stylesuxx/ProxyMonitor)
 
 This application monitors your proxies, checks if they are on-line, rotates them and provides a Dbus interface for other application to retrieve one or more proxies.
@@ -27,7 +29,7 @@ You need the following packages installed when on a Debian/Ubuntu based system:
 ## Running the tests
 From the root directory of the project run:
 
-    nosetests --cover-branches --with-coverage --cover-package=ProxyDaemon
+    nosetests --cover-branches --with-coverage --cover-package=ProxyMonitor
 
 Coverage will report multiple missings in *Proxy.py* those are the validation
 tests. Unfortunately this is hard to test since it would need permanent proxies

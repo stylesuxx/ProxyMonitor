@@ -1,4 +1,4 @@
-from ProxyDaemon import (Monitor, ProxyList, HttpProxy)
+from ProxyMonitor import (Monitor, ProxyList, HttpProxy)
 from nose.plugins.attrib import attr
 from datetime import datetime
 from nose.tools import *

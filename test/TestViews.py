@@ -1,4 +1,4 @@
-from ProxyDaemon import (ProxyView, LogView, MainView)
+from ProxyMonitor import (ProxyView, LogView, MainView)
 from datetime import datetime
 import unittest
 import curses

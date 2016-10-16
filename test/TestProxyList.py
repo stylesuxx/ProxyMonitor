@@ -1,4 +1,4 @@
-from ProxyDaemon import ProxyList, Monitor, HttpProxy
+from ProxyMonitor import ProxyList, Monitor, HttpProxy
 from datetime import datetime
 import unittest
 

@@ -1,4 +1,4 @@
-from ProxyDaemon import (DbusHandlerFactory)
+from ProxyMonitor import (DbusHandlerFactory)
 from nose.plugins.attrib import attr
 from nose.tools import *
 import threading
