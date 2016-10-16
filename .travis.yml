@@ -7,3 +7,5 @@ install: "pip install -r requirements.txt"
 script: nosetests
 virtualenv:
     system_site_packages: true
+env:
+  - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$USER/bus
