@@ -1,17 +1,40 @@
 from ProxyDaemon import (Monitor, ProxyList, HttpProxy)
 from datetime import datetime
+from nose.tools import *
 import unittest
 
 
 class TestHttpProxy(unittest.TestCase):
-    def setUp(self):
-        pass
+    monitor = None
 
-    def test_monitor_init(self):
+    @classmethod
+    def setupClass(cls):
         http = ProxyList(HttpProxy, 'cat test/test_proxies.txt')
-        monitor = Monitor(http)
-        monitor.daemon = True
-        monitor.start()
+        cls.monitor = Monitor(http)
+        cls.monitor.daemon = True
+        cls.monitor.start()
 
-        print monitor.get_protocol()
-        assert monitor.get_protocol() == 'Http'
+    def test_monitor_protocol(self):
+        print self.monitor.get_protocol()
+        assert self.monitor.get_protocol() == 'Http'
+
+    def test_monitor_log(self):
+        log = self.monitor.get_log()
+        print log
+        assert log
+
+    @raises(IndexError)
+    def test_monitor_pop(self):
+        self.monitor.pop()
+
+    def test_monitor_get(self):
+        proxies = self.monitor.get(5)
+        print proxies
+        assert len(proxies) is 0
+
+    def test_monitor_getAll(self):
+        proxies = self.monitor.getAll()
+
+        '''
+        stats = self.monitor.get_stats()
+        '''
