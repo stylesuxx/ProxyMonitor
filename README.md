@@ -1,5 +1,6 @@
-# Proxy Daemon Monitor
-> Monitor your available proxies.
+# Proxy Monitor Daemon
+> Monitor, check and rotate your proxies.
+[![Build Status](https://travis-ci.org/stylesuxx/ProxyMonitor.svg?branch=develop)](https://travis-ci.org/stylesuxx/ProxyMonitor)
 
 This application monitors your proxies, checks if they are on-line, rotates them and provides a Dbus interface for other application to retrieve one or more proxies.
 
@@ -19,6 +20,10 @@ You can use this module either as a module to extend your application, or as a s
 ## Prerequisites
 For this daemon to work properly you will need a system that supports Dbus. This means some kind of Linux. Might also work on Mac when the appropriate libs are installed validation Brew, if anyone can confirm this, please feel free to drop me a line in the issues section.
 
+You need the following packages installed when on a Debian/Ubuntu based system:
+
+    sudo apt-get install python-dbus python-gtk2
+
 ## Running the tests
 From the root directory of the project run:
 
@@ -31,6 +36,9 @@ to the test cases.
 
 In Monitor.py multiple lines show as exit, this is expected when the loop is
 stopped.
+
+### Integration tests with travis
+When running integration tests with travis all tests concerning dbus are skipped, since it was impossible for me to confiugre travis to use dbus without X.
 
 ## Contributing
 Contribution is very welcome, no matter if documentation, typos or actual code. Before starting a big new feature please check back with be before hand in the issues section.
