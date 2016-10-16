@@ -42,17 +42,6 @@ class ProxyList():
         """
         return len(self.proxies)
 
-    def __getitem__(self, key):
-        """Return a proxy item.
-
-        :param key: The name of the proxy
-        :type key: str
-
-        :returns: Return the proxy
-        :rtype: Proxy
-        """
-        return self.proxies[key]
-
     def __setitem__(self, key, value):
         """Set a proxy item.
 
