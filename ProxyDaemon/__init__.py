@@ -3,3 +3,4 @@ from Proxy import (Proxy, HttpProxy, HttpsProxy, AnonymousHttpProxy,
 from Views import ProxyView, LogView, MainView
 from ProxyList import ProxyList
 from Monitor import Monitor
+from DbusHandler import DbusHandlerFactory
