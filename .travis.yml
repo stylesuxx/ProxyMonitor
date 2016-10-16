@@ -3,6 +3,7 @@ python:
   - "2.7"
 before_install:
   - sudo apt-get install python-dbus python-gobject python-gtk2
+  - mkdir -p /run/user/$USER/
   - sudo touch /run/user/$USER/bus
 install: "pip install -r requirements.txt"
 script: nosetests
